@@ -17,7 +17,7 @@ export default function RestaurantScreen() {
   const [popupMessage, setPopupMessage] = useState('');
 
   useEffect(() => {
-    fetch(`http://192.242.6.127/fwapi/endpoints/productos.php?restaurante_id=${restaurant.id}`)
+    fetch(`http://192.168.0.20/fwapi/endpoints/productos.php?restaurante_id=${restaurant.id}`)
       .then((res) => res.json())
       .then((data) => {
         if (data.success) {
@@ -62,7 +62,14 @@ export default function RestaurantScreen() {
                 <TouchableOpacity
                   style={styles.addBtn}
                   onPress={() => {
-                    addToCart(item);
+                    // 👉 Aquí aseguramos incluir restaurant_id
+                    addToCart({
+                      id: item.id,
+                      name: item.name,
+                      price: item.price,
+                      image: item.image,
+                      restaurant_id: restaurant.id,
+                    });
                     showPopup(`${item.name} agregado al carrito`);
                   }}
                 >

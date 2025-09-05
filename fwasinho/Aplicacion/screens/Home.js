@@ -1,42 +1,37 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View, Text, FlatList, TouchableOpacity,
-  StyleSheet, TextInput, ActivityIndicator,
-} from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput, ActivityIndicator, SafeAreaView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 
-const categories = ['Todo', 'Pizza', 'Bebidas', 'Asiática'];
-
 export default function HomeScreen() {
-  const [selectedCategory, setSelectedCategory] = useState('Todo');
   const [search, setSearch] = useState('');
   const [restaurants, setRestaurants] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigation = useNavigation();
 
   useEffect(() => {
-    fetch('http://192.242.6.127/fwapi/endpoints/restaurantes.php')
+    let alive = true;
+    fetch('http://192.168.0.20/fwapi/endpoints/restaurantes.php')
       .then((res) => res.json())
       .then((data) => {
-        setRestaurants(data);
-        setLoading(false);
+        if (alive) {
+          setRestaurants(Array.isArray(data) ? data : []);
+          setLoading(false);
+        }
       })
       .catch((err) => {
         console.error(err);
         setLoading(false);
       });
+    return () => { alive = false; };
   }, []);
 
   const filtered = restaurants.filter((r) => {
-    const category = r.category?.toLowerCase?.() || '';
-    const selected = selectedCategory?.toLowerCase?.() || '';
-    const matchCategory = selected === 'todo' || category === selected;
-    const matchSearch = r.name?.toLowerCase?.().includes(search.toLowerCase());
-    return matchCategory && matchSearch;
+    const name = (r.name || r.nombre || '').toLowerCase();
+    return name.includes(search.toLowerCase());
   });
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <Text style={styles.title}>Restaurantes</Text>
 
       <TextInput
@@ -47,95 +42,79 @@ export default function HomeScreen() {
         placeholderTextColor="#aaa"
       />
 
-      <View style={styles.categoryContainer}>
-        {categories.map((category) => (
-          <TouchableOpacity
-            key={category}
-            onPress={() => setSelectedCategory(category)}
-            style={[
-              styles.categoryButton,
-              selectedCategory === category && styles.categoryButtonSelected,
-            ]}
-          >
-            <Text
-              style={[
-                styles.categoryText,
-                selectedCategory === category && styles.categoryTextSelected,
-              ]}
-            >
-              {category}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
       {loading ? (
-        <ActivityIndicator size="large" color="black" style={{ marginTop: 40 }} />
+        <ActivityIndicator size="large" style={{ marginTop: 40 }} />
       ) : (
         <FlatList
           data={filtered}
-          keyExtractor={(item) => item.id?.toString() || Math.random().toString()}
+          keyExtractor={(item, i) =>
+            item.id?.toString?.() ||
+            item.idRestaurante?.toString?.() ||
+            `r-${i}`
+          }
           contentContainerStyle={{ paddingBottom: 100 }}
           showsVerticalScrollIndicator={false}
-          renderItem={({ item }) => (
-            <View style={styles.card}>
-              <View style={styles.avatar} />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.name}>{item.name || 'Sin nombre'}</Text>
-                <Text style={styles.category}>{item.category || 'Sin categoría'}</Text>
-                <Text style={styles.time}>{item.time || 'Sin tiempo'}</Text>
+          ListEmptyComponent={
+            <Text style={{ textAlign: 'center', marginTop: 24, color: '#666' }}>
+              No hay restaurantes que coincidan con la búsqueda.
+            </Text>
+          }
+          renderItem={({ item }) => {
+            const name = item.name || item.nombre || 'Sin nombre';
+            const category = item.category || item.categoria || 'Sin categoría';
+            const time = item.time || item.tiempo || 'Sin tiempo';
+            const rating = item.rating ?? item.calificacion ?? 'N/A';
+
+            return (
+              <View style={styles.card}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.name}>{name}</Text>
+                  <Text style={styles.category}>{category}</Text>
+                  <Text style={styles.time}>{time}</Text>
+                </View>
+                <View style={styles.infoRight}>
+                  <Text style={styles.rating}>⭐ {rating}</Text>
+                  <TouchableOpacity
+                    style={styles.menuButton}
+                    onPress={() => navigation.navigate('Restaurant', { restaurant: item })}
+                  >
+                    <Text style={styles.menuButtonText}>Ver Menú</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-              <View style={styles.infoRight}>
-                <Text style={styles.rating}>⭐ {item.rating ?? 'N/A'}</Text>
-                <TouchableOpacity
-                  style={styles.menuButton}
-                  onPress={() => navigation.navigate('Restaurant', { restaurant: item })}
-                >
-                  <Text style={styles.menuButtonText}>Ver Menú</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
+            );
+          }}
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: 16, paddingTop: 40, backgroundColor: '#fff' },
-  title: { fontSize: 22, fontWeight: 'bold', marginBottom: 16 },
+  container: { flex: 1, backgroundColor: '#fff', paddingHorizontal: 16 },
+  title: { fontSize: 22, fontWeight: 'bold', marginTop: 30, marginBottom: 20, textAlign: 'center' },
   searchInput: {
-    backgroundColor: '#f0f0f0', paddingVertical: 8, paddingHorizontal: 16,
-    borderRadius: 20, marginBottom: 12, fontSize: 14, color: '#000',
+    backgroundColor: '#f0f0f0',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    marginBottom: 12,
+    fontSize: 14,
+    color: '#000'
   },
-  categoryContainer: {
-    flexDirection: 'row', marginBottom: 16, flexWrap: 'wrap',
-  },
-  categoryButton: {
-    paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20,
-    backgroundColor: '#f0f0f0', marginRight: 8, marginBottom: 8,
-  },
-  categoryButtonSelected: { backgroundColor: 'black' },
-  categoryText: { color: 'black', fontWeight: 'bold' },
-  categoryTextSelected: { color: 'white' },
   card: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: '#f9f9f9',
-    borderRadius: 10, padding: 12, marginBottom: 10,
-  },
-  avatar: {
-    width: 40, height: 40, borderRadius: 20, backgroundColor: '#ccc', marginRight: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f9f9f9',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 10
   },
   name: { fontWeight: 'bold' },
   category: { color: '#888', fontSize: 12 },
   time: { fontSize: 12, color: '#aaa' },
   rating: { fontWeight: 'bold', marginBottom: 6, textAlign: 'right' },
   infoRight: { alignItems: 'flex-end', justifyContent: 'space-between', height: 60 },
-  menuButton: {
-    backgroundColor: '#000', paddingVertical: 6,
-    paddingHorizontal: 12, borderRadius: 20, marginTop: 6,
-  },
-  menuButtonText: {
-    color: '#fff', fontSize: 12, fontWeight: 'bold', textAlign: 'center',
-  },
+  menuButton: { backgroundColor: '#000', paddingVertical: 6, paddingHorizontal: 12, borderRadius: 20, marginTop: 6 },
+  menuButtonText: { color: '#fff', fontSize: 12, fontWeight: 'bold', textAlign: 'center' },
 });

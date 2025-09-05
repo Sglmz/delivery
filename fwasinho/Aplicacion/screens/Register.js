@@ -13,7 +13,7 @@ export default function RegisterScreen({ navigation }) {
   }
 
   try {
-    const response = await fetch('http://192.242.6.127/fwapi/endpoints/register.php', {
+    const response = await fetch('http://192.168.0.20/fwapi/endpoints/register.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ nombre: name, email, password }),

@@ -3,7 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import HomeScreen from '../screens/Home';
-import FavoritesScreen from '../screens/Favorites';
+import HistoryScreen from '../screens/HistoryScreen';
 import CartScreen from '../screens/Cart';
 import ProfileScreen from '../screens/Profile';
 
@@ -27,8 +27,8 @@ export default function MainTabs() {
             case 'Inicio':
               iconName = focused ? 'home-variant' : 'home-variant-outline';
               break;
-            case 'Favoritos':
-              iconName = focused ? 'heart' : 'heart-outline';
+            case 'Historial':
+              iconName = focused ? 'history' : 'history';
               break;
             case 'Carrito':
               iconName = focused ? 'cart' : 'cart-outline';
@@ -49,7 +49,7 @@ export default function MainTabs() {
       })}
     >
       <Tab.Screen name="Inicio" component={HomeScreen} />
-      <Tab.Screen name="Favoritos" component={FavoritesScreen} />
+      <Tab.Screen name="Historial" component={HistoryScreen} />
       <Tab.Screen name="Carrito" component={CartScreen} />
       <Tab.Screen name="Perfil" component={ProfileScreen} />
     </Tab.Navigator>
